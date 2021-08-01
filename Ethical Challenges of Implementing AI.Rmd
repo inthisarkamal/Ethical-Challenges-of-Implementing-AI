@@ -1,0 +1,407 @@
+---
+title: "AI Jobs"
+author: "Inthisar Kamal"
+date: "22/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages("readxl")
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(maps)
+library(wesanderson)
+library(ggthemes)
+library(dplyr)
+library(extrafont)
+library(plyr)
+library(scales)
+library(janitor)
+library(readxl)
+```
+
+
+```{r}
+#Starting by looking at the growth rate of the share of AI jobs in each industry
+```
+
+
+```{r}
+Industry_Share <- read_excel("/Users/inthisarkamal/Desktop/Industry Share.xlsx")
+```
+```{r}
+Industry_Share
+```
+
+```{r}
+Industry_Share<- Industry_Share[-c(1),]
+Industry_Share
+```
+
+```{r}
+colnames(Industry_Share) <- c("Industry", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019")
+Industry_Share
+```
+
+```{r}
+longer_data <- Industry_Share %>%
+  pivot_longer('2010':'2019', names_to = "year", values_to = "share")
+print(longer_data)
+```
+```{r}
+Industry_Share %>%
+  filter(Industry == "Health Care and Social Assistance"| Industry =="Finance and Insurance" |Industry== "Information")
+```
+
+
+```{r}
+longer_data %>%
+  ggplot((aes(x=year, y=share, group=Industry, colour=as.factor(Industry))))+
+  geom_line()+
+  labs(title = "Growth Rate of AI in Different Industries", y="Growth Rate", x= "Year")+
+  theme(plot.title=element_text(hjust=0.5))
+#Graph may appear squished in the output section so please open graph in new window for full clarity
+```
+
+```{r}
+#Looking at the growth of different AI technologies
+```
+
+
+```{r}
+AI_Types <- read_excel("/Users/inthisarkamal/Downloads/Indeed Sectoral Jobs.xlsx", sheet = 1)
+```
+
+
+```{r}
+View(AI_Types)
+```
+
+
+```{r}
+AI_Types <- AI_Types[ , -c(7:13)]
+AI_Types
+```
+
+
+```{r}
+AI_Types<- AI_Types[(-2)]
+AI_Types
+```
+
+
+```{r}
+colnames(AI_Types) <- c("Date", "Computer Vision Models", "Deep Learning", "Machine Learning", "Natural Language Processing")
+AI_Types
+```
+
+
+```{r}
+AI_Types2 <- AI_Types %>%
+  pivot_longer(`Computer Vision Models`:`Natural Language Processing`, names_to = "Types", values_to = "share")
+print(AI_Types2)
+```
+```{r}
+AI_Types2 %>%
+  group_by(Types)%>%
+  arrange(desc(share))
+```
+
+
+```{r}
+AI_Types2 %>%
+  group_by(Types) %>%
+  ggplot(aes(x=Date, y=share, colour=Types))+
+  geom_line()+
+  labs(title = "Use of different AI Tools", y= "Use Cases", x="Year")+
+  theme(plot.title=element_text(hjust=0.5))
+```
+
+
+```{r}
+AI_Risk <- read_excel("/Users/inthisarkamal/Downloads/PwC Ethical AI Principles Traceability Matrix - AI Index (1).xlsx", sheet ="Principles Mapping")
+AI_Risk
+```
+
+
+```{r}
+AI_Risk$na_count <- apply(AI_Risk, 1, function(x) sum(is.na(x)))
+AI_Risk
+```
+
+
+```{r}
+colnames(AI_Risk)[colnames(AI_Risk) %in% c("...1", "...60")] <- c("Challenges", "Frequency")
+AI_Risk
+```
+
+
+```{r}
+AI_Risk2<-AI_Risk[-c((20:36)),]
+AI_Risk2
+```
+
+
+```{r}
+AI_Risk2$Frequency <- as.numeric(as.character(AI_Risk2$Frequency))
+AI_Risk2
+```
+
+
+```{r}
+AI_Risk2<-AI_Risk2[-c(1),]
+AI_Risk2
+```
+```{r}
+missing2 <- AI_Risk2 %>%
+  filter(!is.na(AI_Risk2))
+missing2
+```
+
+```{r}
+AI_Risk2 %>%
+  ggplot(mapping=aes(x=fct_reorder(Challenges, Frequency, .desc = FALSE), y=Frequency, fill=Challenges))+
+  geom_bar(stat="identity", position="dodge")+
+  labs(title = "AI Risks and Challenges", y="Available Frameworks", x="",  fill=FALSE)+
+  theme_classic()+
+  coord_flip()+
+  theme(legend.position = "none")+
+  theme(plot.title=element_text(hjust=0.5))+
+  geom_text(aes(label=round(Frequency, 1)), nudge_y=-0.6, color="white")
+```
+```{r}
+#Looking at steps Organizations are taking towards risk mitigation
+```
+
+
+```{r}
+Risk_Mitigation <- read_excel("/Users/inthisarkamal/Downloads/Industry adoption.xlsx")
+```
+
+
+```{r}
+Risk_Mitigation
+```
+```{r}
+Risk_Mitigation<-Risk_Mitigation [-c(3)]
+```
+
+
+```{r}
+Risk_Mitigation
+```
+
+
+```{r}
+Risk_Mitigation<-Risk_Mitigation[-c(1),]
+Risk_Mitigation
+```
+
+
+```{r}
+colnames(Risk_Mitigation) <- c("Risk Mitigation", "Percentage of respondents")
+Risk_Mitigation
+```
+
+
+```{r}
+Risk_Mitigation$`Percentage of respondents` <- as.numeric(as.character(Risk_Mitigation$`Percentage of respondents`))
+Risk_Mitigation
+```
+
+
+```{r}
+Risk_Mitigation<- Risk_Mitigation %>%
+  mutate(None=100-`Percentage of respondents`)
+Risk_Mitigation
+```
+
+
+```{r}
+Risk_Mitigation%>%
+  ggplot(mapping=aes(x=fct_reorder(`Risk Mitigation`, None, .desc=FALSE), y=None, fill= `Risk Mitigation`))+
+  geom_col()+
+  geom_text(aes(label= signif(None, digits=3)), nudge_y = 4)+
+  labs(title="Percentage of Tech departments who admit to not having protocols in the following risk areas", y="", fill=FALSE)+
+  theme(plot.title=element_text(hjust=0.5))+
+  coord_flip()+
+  labs(x="")+
+  theme_classic()+
+  theme(legend.position="none")
+#Graph may appear squished in the output section so please open graph in new window for full clarity
+```
+```{r}
+#Ethics at AI Conferences
+```
+
+
+```{r}
+AI_Ethics <- read.csv("/Users/inthisarkamal/Downloads/conf_matches.csv")
+```
+
+```{r}
+AI_Ethics %>%
+  select(year, ethics)%>%
+  group_by(year) %>%
+  arrange(-desc(year))
+```
+
+
+```{r}
+AI_Ethics %>%
+  select(year, ethics) %>%
+  group_by(year) %>%
+  arrange(-desc(year)) %>%
+  ggplot(mapping=aes(year, ethics, colour=year)) +
+  geom_bar(stat="identity")+
+  theme_clean()+
+  labs(title = "Discourse around Ethics in AI conversations", 
+       x= "Year", 
+       y = "Number of times AI Ethics is mentioned at AI conferences")+
+  theme(plot.title=element_text(hjust=0.5))+
+  theme(legend.position = "none")
+```
+
+
+```{r}
+AI_Congress <- read_excel("/Users/inthisarkamal/Downloads/Congressional AI mentions.xlsx")
+```
+
+
+```{r}
+AI_Congress
+```
+```{r}
+#Removing rows with word content/NA values
+```
+
+
+```{r}
+AI_Congress <- AI_Congress[-c(4,5,6,7),]
+AI_Congress
+```
+
+
+```{r}
+colnames(AI_Congress)[colnames(AI_Congress) == "...1"] <- "Format"
+AI_Congress
+```
+
+
+```{r}
+colnames(AI_Congress) <- c("Format", "2001-2002", "2003-2004", "2005-2006", "2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016", "2017-2018", "2019-present")
+AI_Congress
+```
+
+
+```{r}
+AI_Congress<- AI_Congress %>%
+  adorn_totals("row")
+```
+
+
+```{r}
+AI_Congress
+```
+
+
+
+
+
+```{r}
+AI_Congress2 <- AI_Congress %>%
+  pivot_longer(`2001-2002`:`2019-present`, names_to = "Session", values_to = "Mentions")
+print(AI_Congress2)
+```
+
+
+```{r}
+AI_Congress2 %>%
+  group_by(Format) %>%
+  ggplot(aes(x=Session, y=Mentions, colour=Format))+
+  geom_bar(stat="identity")+
+  labs(title = "AI In Congress", 
+       x= "Year", 
+       y = "Number of Mentions of AI in Congress")+
+  theme_clean()+
+  theme(text = element_text(size=20), axis.text.x=element_text(angle=90, hjust=1))+
+  theme(legend.position = "bottom")
+```
+
+
+```{r}
+AI <- read_excel("/Users/inthisarkamal/Downloads/AI for social good (2).xlsx")
+```
+
+
+```{r}
+AI<-AI [! (row.names(AI) %in% c('1','2','3','18','22','23','17')),]
+```
+
+
+```{r}
+AI%>%
+summarise(Name=...2, Goal=...3, Number_of_use_cases=...4)
+```
+
+
+```{r}
+colnames(AI) <- c("UN_SDG", "Name", "Goal", "Number_of_Use_Cases")
+AI
+```
+
+
+```{r}
+AI$Number_of_Use_Cases <- as.numeric(as.character(AI$Number_of_Use_Cases))
+AI
+```
+
+
+```{r}
+AI %>%
+  select(Name, Number_of_Use_Cases)
+```
+
+
+```{r}
+AI <- AI [-c(13),]
+AI
+```
+```{r}
+missing <- AI %>%
+  filter(is.na(Name))
+```
+
+```{r}
+missing
+```
+
+
+```{r}
+AI %>% 
+  filter(!is.na(Name)) %>%
+  ggplot(mapping=aes(x=fct_reorder(Name, Number_of_Use_Cases, .desc=FALSE), y=Number_of_Use_Cases, fill = Name))+
+  geom_bar(stat="identity", position = "dodge")+
+  labs(title = "AI Uses in UN Sustainability Goals", y = "Number of Use Cases in this Field", fill=FALSE)+
+  geom_text(aes(label=round(Number_of_Use_Cases, 1)), nudge_y=-0.6, color="white")+
+  theme_classic()+
+  coord_flip()+
+  labs(x="")+
+  theme(legend.position = "none")+
+  theme(plot.title=element_text(hjust=0.5))
+```
+
+
+
+
+
+
+
